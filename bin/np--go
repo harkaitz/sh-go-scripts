@@ -1,0 +1,15 @@
+#!/bin/sh -e
+##:
+#h: Usage: np--go : Initialize go project.
+##:
+np__go() {
+    go-h-mod -i "github.com/harkaitz/$(basename $(pwd) .git)"
+    make-h add go license
+}
+if test @"$(basename "$0")" = @"np--go"; then
+    case "${1}" in
+        -h|--help) sed -n 's/^ *#h: \{0,1\}//p' "$0" ;;
+        *)         np__go "$@"; exit 0;;
+    esac
+fi
+

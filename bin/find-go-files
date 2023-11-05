@@ -1,0 +1,13 @@
+#!/bin/sh -e
+##:
+#h: Usage: find-go-files [DIRS...]
+##:
+find_go_files() {
+    find "${@:-.}" -iname '*.go'
+}
+if test @"$(basename "$0")" = @"find-go-files";then
+    case "${1}" in
+        -h|--help) sed -n 's/^ *#h: \{0,1\}//p' "$0" ;;
+        *)         find_go_files "$@"; return 0      ;;
+    esac
+fi

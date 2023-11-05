@@ -1,0 +1,55 @@
+#!/bin/sh -e
+##:
+#h: Usage: go-h-cmd-getopt NAME
+##:
+go_h_cmd_getopt() {
+    local name="$1"
+    if test ! -n "${name}"; then
+        echo >&2 "error: Specify a program name."
+        return 1
+    fi
+    echo "Creating cmd/${name}/main.go ..."
+    if test ! -e "cmd/${name}/main.go"; then
+        mkdir -p "cmd/${name}"
+        sed 's/^|//' > "cmd/${name}/main.go" <<-EOF
+	|package main
+	|
+	|import (
+	|	"os"
+	|	"fmt"
+	|	"github.com/pborman/getopt/v2"
+	|)
+	|
+	|const help string =
+	|\`Usage: ${name} ...
+	|
+	|Copyright (c) 2023 - Harkaitz Agirre - All rights reserved.\`
+	|
+	|func main() {
+	|	var err error
+	|	
+	|	// Error manager.
+	|	defer func() {
+	|		if err != nil {
+	|			fmt.Fprintf(os.Stderr, "${name}: error: %v\n", err.Error())
+	|			os.Exit(1)
+	|		}
+	|	}()
+	|	
+	|	// Parse command line arguments.
+	|	hFlag := getopt.BoolLong("help", 'h')
+	|	getopt.SetUsage(func() { fmt.Println(help) })
+	|	getopt.Parse()
+	|	if *hFlag { getopt.Usage(); return }
+	|	
+	|}
+	EOF
+    fi
+    go get -u "github.com/pborman/getopt/v2"
+}
+if test @"$(basename "$0")" = @"go-h-cmd-getopt";then
+    case "${1}" in
+        ''|-h|--help) sed -n 's/^ *#h: \{0,1\}//p' "$0";;
+        *)            go_h_cmd_getopt "$@"; exit 0;;
+    esac
+fi

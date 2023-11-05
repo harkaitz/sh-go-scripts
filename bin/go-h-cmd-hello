@@ -1,0 +1,25 @@
+#!/bin/sh -e
+##:
+#h: Usage: go-h-cmd-hello NAME
+##:
+go_h_cmd_hello() {
+    local name="$1"
+    if test ! -n "${name}"; then
+        echo >&2 "error: Specify a program name."
+        return 1
+    fi
+    mkdir -p "cmd/${name}"
+    cat > "cmd/${name}/main.go" <<-EOF
+	package main
+	import "fmt"
+	func main() {
+	    fmt.Println("Hello world")
+	}
+	EOF
+}
+if test @"$(basename "$0")" = @"go-h-cmd-hello";then
+    case "${1}" in
+        ''|-h|--help) sed -n 's/^ *#h: \{0,1\}//p' "$0"  ;;
+        *)            go_h_cmd_hello "$@"; exit 0        ;;
+    esac
+fi

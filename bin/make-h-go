@@ -1,0 +1,61 @@
+#!/bin/sh -e
+##:
+#h: Usage: make-h-go ...
+#h:
+#h: ... cmds        : List defined programs.
+#h: ... makefile    : Print 'Makefile'.
+#h: ... gitignore   : Print '.gitignore'.
+##:
+make_h_go() {
+    local cmd="$1"
+    shift
+    case "${cmd}" in
+        cmds)      make_h_go_cmds      ;;
+        makefile)  make_h_go_makefile  ;;
+        gitignore) make_h_go_gitignore ;;
+        *)         echo >&2 "error: Invalid argument: ${cmd}"; return 1;;
+    esac
+}
+## -------------------------------------------------------------------
+make_h_go_cmds() {
+    if test -d cmd; then
+        find ./cmd -mindepth 1 -maxdepth 1 -type d
+    fi
+}
+make_h_go_makefile() {
+    local dir name fils='' dirs="$(make_h_go_cmds)"
+    if test ! -n "${dirs}"; then
+        return 0
+    fi
+    echo "all: all-go"
+    echo "install: install-go"
+    echo "clean: clean-go"
+    echo "deps: deps-go"
+    echo ""
+    for dir in ${dirs}; do
+        name="$(basename "${dir}")"
+        fils="${fils} build/${name}\$(EXE)"
+        echo "build/${name}\$(EXE): deps"
+        echo "	go build -o \$@ \$(GO_CONF) ${dir}"
+    done
+    echo ""
+    echo "all-go: ${fils}"
+    echo "deps-go:"
+    echo "	mkdir -p build"
+    echo "install-go:"
+    echo "	install -d \$(DESTDIR)\$(PREFIX)/bin"
+    echo "	cp ${fils} \$(DESTDIR)\$(PREFIX)/bin"
+    echo "clean-go:"
+    echo "	rm -f ${fils}"
+}
+make_h_go_gitignore() {
+    echo "build/*"
+    echo "releases/*"
+}
+## -------------------------------------------------------------------
+if test @"$(basename "$0")" = @"make-h-go";then
+    case "${1}" in
+        ''|-h|--help) sed -n 's/^ *#h: \{0,1\}//p' "$0";;
+        *)            make_h_go "$@"; return 0;;
+    esac
+fi
