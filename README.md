@@ -9,13 +9,46 @@ find-go-files
 
     Usage: find-go-files [DIRS...]
 
+frontend-h-favicon
+
+    Usage: frontend-h-favicon -l | NAME
+    
+    Create "img/favicon.png" file to add in a website with the
+    following tag:
+    
+      <link rel="icon" type="image/x-icon" href="/img/favicon.png" />
+    
+    Environment variables: LOGO_DIRECTORY
+
+frontend-h-htmx
+
+    Usage: frontend-h-htmx
+    
+    Download "htmx.min.js" to "js".
+
 go-h-cmd-getopt
 
     Usage: go-h-cmd-getopt NAME
+    
+    Create a command line utility with getopt(1) command line
+    arguments in "cmd/NAME/main.go".
+
+go-h-cmd-gin1
+
+    Usage: go-h-cmd-gin1 LAUNCHER-NAME PACKAGE-NAME
+    
+    Create a skeleton of a go/htmx project. This command will
+    create a launcher in "cmd/LAUNCHER/main.go" and a website
+    in "routes.go" and "public/".
+    
+    If the files exist only "public/js/htmx.min.js" will be
+    updated.
 
 go-h-cmd-hello
 
     Usage: go-h-cmd-hello NAME
+    
+    Create a simple hello world program in "cmd/NAME/main.go".
 
 go-h-coverage
 
@@ -29,6 +62,15 @@ go-h-coverage
       -r [TEST] : Execute tests and save data to "/tmp/cov". 
                   
     (i) It will put "./build" in path for you.
+
+go-h-mod
+
+    Usage: go-h-mod ...
+    
+    -i URL : Create a "go.mod" and git repo ".git" if needed.
+    -c     : Check a "go.mod" exists.
+    -m     : Print current module's URL.
+    
 
 make-h-go
 

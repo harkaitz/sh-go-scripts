@@ -1,0 +1,24 @@
+#!/bin/sh -e
+##:
+#h: Usage: frontend-h-htmx
+#h:
+#h: Download "htmx.min.js" to "js".
+##:
+frontend_h_htmx() {
+    local u="https://unpkg.com/htmx.org/dist/htmx.min.js" d="js"
+    local f="${d}/htmx.min.js"
+    if test ! -d "${d}"; then
+        echo >&2 "error: Directory '${d}' does not exist."
+        return 1
+    fi
+    if test ! -e "${f}"; then
+        wget -O "${f}.tmp" "${u}"
+        mv "${f}.tmp" "${f}"
+    fi
+}
+if test @"$(basename "$0")" = @"frontend-h-htmx";then
+    case "${1}" in
+        -h|--help) sed -n 's/^ *#h: \{0,1\}//p' "$0";;
+        *)         frontend_h_htmx "$@"; exit 0     ;;
+    esac
+fi

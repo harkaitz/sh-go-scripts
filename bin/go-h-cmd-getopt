@@ -1,6 +1,9 @@
 #!/bin/sh -e
 ##:
 #h: Usage: go-h-cmd-getopt NAME
+#h:
+#h: Create a command line utility with getopt(1) command line
+#h: arguments in "cmd/NAME/main.go".
 ##:
 go_h_cmd_getopt() {
     local name="$1"
@@ -23,7 +26,7 @@ go_h_cmd_getopt() {
 	|const help string =
 	|\`Usage: ${name} ...
 	|
-	|Copyright (c) 2023 - Harkaitz Agirre - All rights reserved.\`
+	|Copyright (c) 2023 - NAME - All rights reserved.\`
 	|
 	|func main() {
 	|	var err error

@@ -1,6 +1,8 @@
 #!/bin/sh -e
 ##:
 #h: Usage: go-h-cmd-hello NAME
+#h:
+#h: Create a simple hello world program in "cmd/NAME/main.go".
 ##:
 go_h_cmd_hello() {
     local name="$1"
@@ -9,12 +11,15 @@ go_h_cmd_hello() {
         return 1
     fi
     mkdir -p "cmd/${name}"
-    cat > "cmd/${name}/main.go" <<-EOF
-	package main
-	import "fmt"
-	func main() {
-	    fmt.Println("Hello world")
-	}
+    sed 's/^|//' > "cmd/${name}/main.go" <<-EOF
+	|package main
+	|
+	|import (
+	|	"fmt"
+	|)
+	|func main() {
+	|    fmt.Println("Hello world")
+	|}
 	EOF
 }
 if test @"$(basename "$0")" = @"go-h-cmd-hello";then

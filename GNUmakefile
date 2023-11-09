@@ -15,10 +15,14 @@ install-license:
 install: install-sh
 install-sh:
 	mkdir -p $(DESTDIR)$(PREFIX)/bin
+	cp bin/go-h-cmd-gin1    $(DESTDIR)$(PREFIX)/bin
 	cp bin/go-h-cmd-getopt  $(DESTDIR)$(PREFIX)/bin
+	cp bin/frontend-h-htmx  $(DESTDIR)$(PREFIX)/bin
 	cp bin/go-h-coverage    $(DESTDIR)$(PREFIX)/bin
 	cp bin/make-h-go        $(DESTDIR)$(PREFIX)/bin
 	cp bin/np--go           $(DESTDIR)$(PREFIX)/bin
 	cp bin/go-h-cmd-hello   $(DESTDIR)$(PREFIX)/bin
 	cp bin/find-go-files    $(DESTDIR)$(PREFIX)/bin
+	cp bin/frontend-h-favicon $(DESTDIR)$(PREFIX)/bin
+	cp bin/go-h-mod         $(DESTDIR)$(PREFIX)/bin
 ## -- BLOCK:sh --

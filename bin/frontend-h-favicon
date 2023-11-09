@@ -1,0 +1,67 @@
+#!/bin/sh -e
+##:
+#h: Usage: frontend-h-favicon -l | NAME
+#h:
+#h: Create "img/favicon.png" file to add in a website with the
+#h: following tag:
+#h:
+#h:   <link rel="icon" type="image/x-icon" href="/img/favicon.png" />
+#h:
+#h: Environment variables: LOGO_DIRECTORY
+##:
+frontend_h_favicon() {
+    local OPTIND optopt= opt_i=
+    
+    ## Parse command line arguments.
+    while getopts "l" optopt; do
+        case $optopt in
+            l)  opt_l=y;;
+            \?) return 1;;
+        esac
+    done
+    shift $(( $OPTIND - 1 ))
+    
+    ## Operations.
+    if test -n "${opt_l}"; then
+        frontend_h_favicon_list
+        return 0
+    elif test -n "$1"; then
+        frontend_h_favicon_create "$1"
+    fi
+}
+frontend_h_favicon_list() {
+    echo "glenda"
+    if test -d "${FAVICON_DIRECTORY}"; then
+        find "${FAVICON_DIRECTORY}" -iname '*.png' | sed "
+        s|^${FAVICON_DIRECTORY}/\\(.*\\)\\.png|\\1|
+        "
+    fi
+}
+frontend_h_favicon_create() {
+    local n="${1}" u1= u2= d="img" t="img/favicon.png"
+    if test @"${n}" = @"glenda"; then
+        u1="https://9fans.github.io/usr/local/plan9/mac/spaceglenda.png"
+    elif test -n "${LOGO_DIRECTORY}" && test -f "${LOGO_DIRECTORY}/${n}.png"; then
+        u2="${LOGO_DIRECTORY}/${n}.png"
+    else
+        echo >&2 "error: ${n}: Not found."
+        return 1
+    fi
+    if test ! -d "${d}"; then
+        echo >&2 "error: ${d}: The directory does not exist."
+        return 1
+    fi
+    if test -n "${u1}"; then
+        wget -q -O "${t}.tmp" "${u1}"
+        mv "${t}.tmp" "${t}"
+    elif test -n "${u2}"; then
+        cp "${u2}" "${t}"
+    fi
+}
+## -------------------------------------------------------------------
+if test @"$(basename "$0")" = @"frontend-h-favicon";then
+    case "${1}" in
+        ''|-h|--help) sed -n 's/^ *#h: \{0,1\}//p' "$0" ;;
+        *)            frontend_h_favicon "$@"; exit 0   ;;
+    esac
+fi

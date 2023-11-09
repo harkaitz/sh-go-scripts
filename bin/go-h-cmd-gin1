@@ -1,0 +1,231 @@
+#!/bin/sh -e
+##:
+#h: Usage: go-h-cmd-gin1 LAUNCHER-NAME PACKAGE-NAME
+#h:
+#h: Create a skeleton of a go/htmx project. This command will
+#h: create a launcher in "cmd/LAUNCHER/main.go" and a website
+#h: in "routes.go" and "public/".
+#h:
+#h: If the files exist only "public/js/htmx.min.js" will be
+#h: updated.
+##:
+. go-h-mod
+. frontend-h-htmx
+go_h_cmd_gin1() {
+    local name="$1" package="$2"
+    if test ! -n "${name}"; then
+        echo >&2 "error: Please specify a program name."
+        return 1
+    fi
+    if test ! -n "${package}"; then
+        echo >&2 "error: Please specify a package name."
+        return 1
+    fi
+    
+    ##
+    go_h_mod -c
+    go get "github.com/gin-gonic/gin"
+    go get "github.com/gin-contrib/sessions"
+    go get "github.com/gin-contrib/sessions/memstore"
+    go get "github.com/harkaitz/go-gettext-l10n"
+    
+    ##
+    mkdir -p "cmd/${name}"
+    go_h_cmd_gin1__website_go "routes.go"             "${package}"
+    go_h_cmd_gin1__body_html  "public/b.html"
+    go_h_cmd_gin1__empty_html "public/p-index.html"   "/p/example"
+    go_h_cmd_gin1__empty_html "public/p-example.html" "/p/index"
+    go_h_cmd_gin1__empty_html "public/p-notfound.html"
+    go_h_cmd_gin1__error_html "public/p-error.html"
+    go_h_cmd_gin1__launcher   "cmd/${name}/main.go"    "${package}"
+
+    ##
+    cd public
+    mkdir -p "css" "js" "img" "assets"
+    touch "css/.gitkeep"
+    touch "js/.gitkeep"
+    touch "img/.gitkeep"
+    touch "assets/.gitkeep"
+    frontend_h_htmx
+    cd ..
+}
+go_h_cmd_gin1__website_go() {
+    t_body="b.html"
+    t_index="p-index.html"
+    t_notfound="p-notfound.html"
+    t_error="p-error.html"
+    t_example="p-example.html"
+    if test ! -f "$1"; then
+        echo "Creating $1 ..."
+        sed 's/^|//' <<-EOF > "$1"
+	|package ${2}
+	|
+	|import (
+	|	"github.com/gin-gonic/gin"
+	|	"github.com/harkaitz/go-gettext-l10n"
+	|	"net/http"
+	|	"html/template"
+	|	"io/fs"
+	|	"embed"
+	|	"errors"
+	|)
+	|
+	|type Session struct {
+	|	Error    error
+	|	Context *gin.Context
+	|	Language string
+	|	Page     string
+	|	Title    string
+	|	Message  string
+	|}
+	|
+	|//go:embed public
+	|var staticFS embed.FS
+	|
+	|func InitWebsite(r *gin.Engine) (err error) {
+	|	cssFS, _ := fs.Sub(staticFS, "public/css")
+	|	jsFS , _ := fs.Sub(staticFS, "public/js")
+	|	imgFS, _ := fs.Sub(staticFS, "public/img")
+	|	assFS, _ := fs.Sub(staticFS, "public/assets")
+	|	pubFS, _ := fs.Sub(staticFS, "public")
+	|	
+	|	r.StaticFS("/css"   , http.FS(cssFS))
+	|	r.StaticFS("/js"    , http.FS(jsFS))
+	|	r.StaticFS("/img"   , http.FS(imgFS))
+	|	r.StaticFS("/assets", http.FS(assFS))
+	|	
+	|	r.SetHTMLTemplate(template.Must(template.New("").ParseFS(pubFS, "*.html")))
+	|	
+	|	r.GET("/", func (c *gin.Context) {
+	|		c.Redirect(http.StatusFound, "/p/index")
+	|		return
+	|	})
+	|	r.GET("/p/:page", func (c *gin.Context) {
+	|		var session Session
+	|		session.Init(c)
+	|		if c.GetHeader("HX-Request") == "" || c.GetHeader("HX-Boosted") == "true" {
+	|			c.HTML(http.StatusOK, "${t_body}", &session)
+	|			return
+	|		}
+	|		if session.Error == nil {
+	|			session.Request()
+	|		}
+	|		if session.Error != nil {
+	|			session.Message = l10n.GetError(session.Error, session.Language)
+	|			c.HTML(http.StatusOK, "${t_error}", &session)
+	|			return
+	|		}
+	|		session.Render()
+	|	})
+	|	return
+	|}
+	|
+	|func (s *Session) Init(c *gin.Context) {
+	|	s.Context = c
+	|	s.Language = "en"
+	|	s.Page = c.Param("page")
+	|	return
+	|}
+	|
+	|func (s *Session) Request() {
+	|	msg := s.Context.Query("error")
+	|	if msg != "" {
+	|		s.Error = errors.New(msg)
+	|		return
+	|	}
+	|	return
+	|}
+	|
+	|func (s *Session) Render() {
+	|	switch s.Page {
+	|	case "index":   s.Context.HTML(http.StatusOK      , "${t_index}"   , &s)
+	|	case "example": s.Context.HTML(http.StatusOK      , "${t_example}" , &s)
+	|	default:        s.Context.HTML(http.StatusNotFound, "${t_notfound}", &s)
+	|	}
+	|}
+	EOF
+    fi
+}
+go_h_cmd_gin1__body_html() {
+    if test ! -f "$1"; then
+        echo "Creating $1 ..."
+        sed 's/|//' <<-EOF > "$1"
+	|<!DOCTYPE html>
+	|<html lang="{{.Language}}">
+	|  <head>
+	|    <meta charset="utf-8" />
+	|    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+	|    <title>{{.Title}}</title>
+	|    <script src="/js/htmx.min.js"></script>
+	|  </head>
+	|  <body>
+	|    <h1>Body title</h1>
+	|    <div hx-boost="true">
+	|      <div hx-get="{{\$.Context.Request.URL}}" hx-trigger="load">
+	|      </div>
+	|    </div>    
+	|  </body>
+	|</html>
+	EOF
+    fi
+}
+go_h_cmd_gin1__error_html() {
+    if test ! -f "$1"; then
+        echo "Creating $1 ..."
+        cat <<-EOF > "$1"
+	<h2>Ooops, something went wrong.</h2>
+	<p>
+	  {{\$.Message}}
+	</p>
+	EOF
+    fi
+}
+go_h_cmd_gin1__empty_html() {
+    if test ! -f "$1"; then
+        echo "Creating $1 ..."
+        cat <<-EOF > "$1"
+	<h2>Hello {{\$.Page}}</h2>
+	<p>
+	    <a href="$2">This is an example page.</a>
+	    <a href="?error=RAISE">Raise error</a>
+	</p>
+	EOF
+    fi
+}
+go_h_cmd_gin1__launcher() {
+    if test ! -f "$1"; then
+        echo "Creating $1 ..."
+        sed 's/|//' > "$1" <<-EOF
+	|package main
+	|
+	|import (
+	|	"github.com/gin-gonic/gin"
+	|	"$(go_h_mod -m)"
+	|	"os"
+	|	"log"
+	|)
+	|
+	|func main() {
+	|	var err  error
+	|	var r   *gin.Engine
+	|	r = gin.Default()
+	|	err = ${2}.InitWebsite(r)
+	|	if err != nil {
+	|		log.Panic(err)
+	|	}
+	|	if len(os.Args) >= 2 {
+	|		r.Run(os.Args[1])
+	|	} else {
+	|		r.Run()
+	|	}
+	|}
+	EOF
+    fi
+}
+## -------------------------------------------------------------------
+if test @"$(basename "$0")" = @"go-h-cmd-gin1";then
+    case "${1}" in
+        ''|-h|--help) sed -n 's/^ *#h: \{0,1\}//p' "$0" ;;
+        *)            go_h_cmd_gin1 "$@"; exit 0        ;;
+    esac
+fi
